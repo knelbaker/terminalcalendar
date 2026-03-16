@@ -33,15 +33,19 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.dateInput.Blur()
 				m.categoryInput.Blur()
 			case "d", "x", "delete":
-				// Find first event on selected date
+				// Find ALL events on the selected date
+				m.deleteListIndices = []int{}
 				for i, e := range m.events {
 					if e.Date.Year() == m.selectedDate.Year() &&
 						e.Date.Month() == m.selectedDate.Month() &&
 						e.Date.Day() == m.selectedDate.Day() {
-						m.eventToDeleteIndex = i
-						m.state = StateDeleteEvent
-						break
+						m.deleteListIndices = append(m.deleteListIndices, i)
 					}
+				}
+				
+				if len(m.deleteListIndices) > 0 {
+					m.deleteListCursor = 0
+					m.state = StateSelectDelete
 				}
 			case "right", "l":
 				m.selectedDate = m.selectedDate.AddDate(0, 0, 1)
@@ -126,7 +130,26 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, cmd
 
-		case StateDeleteEvent:
+		case StateSelectDelete:
+			switch msg.String() {
+			case "esc", "n":
+				m.state = StateCalendar
+			case "up", "k":
+				m.deleteListCursor--
+				if m.deleteListCursor < 0 {
+					m.deleteListCursor = len(m.deleteListIndices) - 1
+				}
+			case "down", "j":
+				m.deleteListCursor++
+				if m.deleteListCursor >= len(m.deleteListIndices) {
+					m.deleteListCursor = 0
+				}
+			case "enter", "y", "d", "x":
+				m.eventToDeleteIndex = m.deleteListIndices[m.deleteListCursor]
+				m.state = StateConfirmDelete
+			}
+
+		case StateConfirmDelete:
 			switch msg.String() {
 			case "y", "enter": // Confirm
 				if m.eventToDeleteIndex >= 0 && m.eventToDeleteIndex < len(m.events) {
@@ -135,9 +158,11 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.state = StateCalendar
 				m.eventToDeleteIndex = -1
+				m.deleteListIndices = []int{}
 			case "n", "esc": // Cancel
 				m.state = StateCalendar
 				m.eventToDeleteIndex = -1
+				m.deleteListIndices = []int{}
 			}
 		}
 
