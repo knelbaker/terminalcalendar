@@ -21,7 +21,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.state {
 		case StateCalendar:
 			switch msg.String() {
-			case "n":
+			case "n", "enter":
 				// Switch to add event state
 				m.state = StateAddEvent
 				m.titleInput.SetValue("")
@@ -32,6 +32,17 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.titleInput.Focus()
 				m.dateInput.Blur()
 				m.categoryInput.Blur()
+			case "d", "x", "delete":
+				// Find first event on selected date
+				for i, e := range m.events {
+					if e.Date.Year() == m.selectedDate.Year() &&
+						e.Date.Month() == m.selectedDate.Month() &&
+						e.Date.Day() == m.selectedDate.Day() {
+						m.eventToDeleteIndex = i
+						m.state = StateDeleteEvent
+						break
+					}
+				}
 			case "right", "l":
 				m.selectedDate = m.selectedDate.AddDate(0, 0, 1)
 				if m.selectedDate.Month() != m.currentDate.Month() {
@@ -95,10 +106,10 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						Category: m.categoryInput.Value(),
 					}
 					m.events = append(m.events, newEvent)
-					
+
 					// Save to JSON
 					_ = saveEvents("events.json", m.events)
-					
+
 					// Return to calendar
 					m.state = StateCalendar
 				}
@@ -114,6 +125,20 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.categoryInput, cmd = m.categoryInput.Update(msg)
 			}
 			return m, cmd
+
+		case StateDeleteEvent:
+			switch msg.String() {
+			case "y", "enter": // Confirm
+				if m.eventToDeleteIndex >= 0 && m.eventToDeleteIndex < len(m.events) {
+					m.events = append(m.events[:m.eventToDeleteIndex], m.events[m.eventToDeleteIndex+1:]...)
+					_ = saveEvents("events.json", m.events)
+				}
+				m.state = StateCalendar
+				m.eventToDeleteIndex = -1
+			case "n", "esc": // Cancel
+				m.state = StateCalendar
+				m.eventToDeleteIndex = -1
+			}
 		}
 
 	case tea.WindowSizeMsg:

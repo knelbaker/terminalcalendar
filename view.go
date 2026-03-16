@@ -17,16 +17,18 @@ func (m appModel) View() string {
 	var content string
 	switch m.state {
 	case StateCalendar:
-		content = m.renderCalendarView()
+		content = m.renderCalendarView(false)
 	case StateAddEvent:
 		content = m.renderAddEventForm()
+	case StateDeleteEvent:
+		content = m.renderCalendarView(true)
 	}
 
 	return styleAppBox.Width(m.width).Height(m.height).Render(content)
 }
 
 // renderCalendarView generates the string output for the calendar grid.
-func (m appModel) renderCalendarView() string {
+func (m appModel) renderCalendarView(showDeleteModal bool) string {
 	header := styleCalendarHeader.Render(m.currentDate.Format("January 2006"))
 
 	// Build days of week header
@@ -103,43 +105,51 @@ func (m appModel) renderCalendarView() string {
 
 	grid := lipgloss.JoinVertical(lipgloss.Left, gridRows...)
 
-	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nn: Add Event • q/esc: Quit")
+	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nn/enter: Add • d/x: Delete • q/esc: Quit")
 
 	calendarBlock := lipgloss.JoinVertical(lipgloss.Center, header, "", dowRow, grid, instructions)
 
-	// Side Panel for Events
+	// Panel Content
 	var sidePanel strings.Builder
-	sidePanelTitle := lipgloss.NewStyle().Bold(true).Border(lipgloss.NormalBorder(), false, false, true, false).Render(fmt.Sprintf("Events for %s", m.selectedDate.Format("Jan 02")))
-	sidePanel.WriteString(sidePanelTitle + "\n\n")
 
-	foundEvent := false
-	for _, e := range m.events {
-		if e.Date.Year() == m.selectedDate.Year() && e.Date.Month() == m.selectedDate.Month() && e.Date.Day() == m.selectedDate.Day() {
-			foundEvent = true
+	if showDeleteModal && m.eventToDeleteIndex >= 0 && m.eventToDeleteIndex < len(m.events) {
+		title := m.events[m.eventToDeleteIndex].Title
+		sidePanel.WriteString(lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")).Render("Delete Event?"))
+		sidePanel.WriteString(fmt.Sprintf("\n\nAre you sure you want to delete '%s'?\n\n", title))
+		sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("y: Yes • n: No"))
+	} else {
+		sidePanelTitle := lipgloss.NewStyle().Bold(true).Border(lipgloss.NormalBorder(), false, false, true, false).Render(fmt.Sprintf("Events for %s", m.selectedDate.Format("Jan 02")))
+		sidePanel.WriteString(sidePanelTitle + "\n\n")
 
-			titleStr := lipgloss.NewStyle().Bold(true).Render(e.Title)
-			catStr := lipgloss.NewStyle().Foreground(colorHighlight).Render(fmt.Sprintf("[%s]", e.Category))
+		foundEvent := false
+		for _, e := range m.events {
+			if e.Date.Year() == m.selectedDate.Year() && e.Date.Month() == m.selectedDate.Month() && e.Date.Day() == m.selectedDate.Day() {
+				foundEvent = true
 
-			days := e.DaysUntil()
-			var daysStr string
-			if days == 0 {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render("Today!")
-			} else if days == 1 {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render("Tomorrow")
-			} else if days == -1 {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Yesterday")
-			} else if days < -1 {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(fmt.Sprintf("%d days ago", -days))
-			} else {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("In %d days", days))
+				titleStr := lipgloss.NewStyle().Bold(true).Render(e.Title)
+				catStr := lipgloss.NewStyle().Foreground(colorHighlight).Render(fmt.Sprintf("[%s]", e.Category))
+
+				days := e.DaysUntil()
+				var daysStr string
+				if days == 0 {
+					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render("Today!")
+				} else if days == 1 {
+					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render("Tomorrow")
+				} else if days == -1 {
+					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Yesterday")
+				} else if days < -1 {
+					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(fmt.Sprintf("%d days ago", -days))
+				} else {
+					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("In %d days", days))
+				}
+
+				sidePanel.WriteString(fmt.Sprintf("%s %s\n%s\n\n", titleStr, catStr, daysStr))
 			}
-
-			sidePanel.WriteString(fmt.Sprintf("%s %s\n%s\n\n", titleStr, catStr, daysStr))
 		}
-	}
 
-	if !foundEvent {
-		sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("No events for this day."))
+		if !foundEvent {
+			sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("No events for this day."))
+		}
 	}
 
 	sidePanelBlock := lipgloss.NewStyle().

@@ -14,6 +14,7 @@ type AppState int
 const (
 	StateCalendar AppState = iota
 	StateAddEvent
+	StateDeleteEvent
 )
 
 // Event represents a single event in the calendar.
@@ -53,6 +54,9 @@ type appModel struct {
 	// selectedDate tracks the user's cursor on the calendar.
 	selectedDate time.Time
 
+	// eventToDeleteIndex tracks the index of the event to delete when the confirmation modal is active.
+	eventToDeleteIndex int
+
 	// width and height track the current terminal dimensions.
 	width  int
 	height int
@@ -86,14 +90,15 @@ func initialModel() appModel {
 	now := time.Now()
 
 	return appModel{
-		events:        events,
-		state:         StateCalendar,
-		currentDate:   now,
-		selectedDate:  now,
-		titleInput:    ti,
-		dateInput:     di,
-		categoryInput: ci,
-		focusIndex:    0,
+		events:             events,
+		state:              StateCalendar,
+		currentDate:        now,
+		selectedDate:       now,
+		eventToDeleteIndex: -1,
+		titleInput:         ti,
+		dateInput:          di,
+		categoryInput:      ci,
+		focusIndex:         0,
 	}
 }
 
