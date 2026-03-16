@@ -124,7 +124,11 @@ func (m appModel) renderCalendarView() string {
 			var daysStr string
 			if days == 0 {
 				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render("Today!")
-			} else if days < 0 {
+			} else if days == 1 {
+				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render("Tomorrow")
+			} else if days == -1 {
+				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Yesterday")
+			} else if days < -1 {
 				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(fmt.Sprintf("%d days ago", -days))
 			} else {
 				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("In %d days", days))

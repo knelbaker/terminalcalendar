@@ -29,9 +29,13 @@ type Event struct {
 // Returns a negative number if the event is in the past.
 func (e *Event) DaysUntil() int {
 	now := time.Now()
-	// Truncate both times to the start of the day for accurate day counting
-	startOfNow := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	startOfEvent := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, e.Date.Location())
+	
+	// Create normalized dates exactly at midnight UTC to completely ignore 
+	// daylight saving time and duration shifts when doing math.
+	// We use e.Date's Year/Month/Day directly because it was parsed as a literal calendar date.
+	startOfNow := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	startOfEvent := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, time.UTC)
+	
 	return int(startOfEvent.Sub(startOfNow).Hours() / 24)
 }
 
