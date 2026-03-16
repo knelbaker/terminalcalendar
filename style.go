@@ -8,7 +8,7 @@ import (
 // Keeping them global/package level helps maintain a consistent design system.
 var (
 	// colorHighlight represents a primary accent color (e.g., for selected days or buttons).
-	colorHighlight = lipgloss.Color("205")
+	colorHighlight = lipgloss.Color("#ebdbb2")
 
 	// styleAppBox is the main container style for the application to center content.
 	styleAppBox = lipgloss.NewStyle().
@@ -21,7 +21,7 @@ var (
 
 	// styleEventDot is the style for the dot indicator underneath dates with events.
 	styleEventDot = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("170"))
+			Foreground(lipgloss.Color("#ee5555"))
 
 	// styleFormContainer styles the box wrapping the "Add Event" inputs.
 	styleFormContainer = lipgloss.NewStyle().
