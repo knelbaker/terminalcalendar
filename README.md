@@ -1,5 +1,6 @@
 # Terminal Calendar
 
+![Calendar View](pictures/calendarview.png)
 A beautiful, interactive calendar widget for your terminal, written in Go using the [Bubble Tea](https://github.com/charmbracelet/bubbletea) framework.
 
 ## Features
@@ -53,6 +54,9 @@ A beautiful, interactive calendar widget for your terminal, written in Go using 
 | `Esc` / `Left arrow` | Close the Day View and return focus to the calendar board |
 
 ### Add Event Form
+
+![Add Event Form](pictures/addevent.png)
+
 | Key | Action |
 | --- | --- |
 | `Tab` | Move to the next input field |
