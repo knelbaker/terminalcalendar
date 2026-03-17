@@ -14,39 +14,52 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		// Global quit keys
-		if msg.String() == "ctrl+c" || msg.String() == "q" {
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
 
 		switch m.state {
 		case StateCalendar:
 			switch msg.String() {
-			case "n", "enter":
-				// Switch to add event state
+			case "q", "esc":
+				return m, tea.Quit
+			case "enter":
+				// Gather ALL events on the selected date
+				m.dayEventIndices = []int{}
+				for i, e := range m.events {
+					if e.Date.Year() == m.selectedDate.Year() &&
+						e.Date.Month() == m.selectedDate.Month() &&
+						e.Date.Day() == m.selectedDate.Day() {
+						m.dayEventIndices = append(m.dayEventIndices, i)
+					}
+				}
+				
+				if len(m.dayEventIndices) > 0 {
+					// There are events on this day, jump into Day View to browse them
+					m.dayEventCursor = 0
+					m.state = StateDayView
+				} else {
+					// There are zero events on this day, so pop open the Add Event Form
+					m.state = StateAddEvent
+					m.titleInput.SetValue("")
+					// Pre-fill date input with the selected date
+					m.dateInput.SetValue(m.selectedDate.Format("2006-01-02"))
+					m.categoryInput.SetValue("")
+					m.focusIndex = 0
+					m.titleInput.Focus()
+					m.dateInput.Blur()
+					m.categoryInput.Blur()
+				}
+			case "n":
+				// Explicitly switch to add event state regardless of whether day has events
 				m.state = StateAddEvent
 				m.titleInput.SetValue("")
-				// Pre-fill date input with the selected date
 				m.dateInput.SetValue(m.selectedDate.Format("2006-01-02"))
 				m.categoryInput.SetValue("")
 				m.focusIndex = 0
 				m.titleInput.Focus()
 				m.dateInput.Blur()
 				m.categoryInput.Blur()
-			case "d", "x", "delete":
-				// Find ALL events on the selected date
-				m.deleteListIndices = []int{}
-				for i, e := range m.events {
-					if e.Date.Year() == m.selectedDate.Year() &&
-						e.Date.Month() == m.selectedDate.Month() &&
-						e.Date.Day() == m.selectedDate.Day() {
-						m.deleteListIndices = append(m.deleteListIndices, i)
-					}
-				}
-				
-				if len(m.deleteListIndices) > 0 {
-					m.deleteListCursor = 0
-					m.state = StateSelectDelete
-				}
 			case "right", "l":
 				m.selectedDate = m.selectedDate.AddDate(0, 0, 1)
 				if m.selectedDate.Month() != m.currentDate.Month() {
@@ -130,23 +143,28 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, cmd
 
-		case StateSelectDelete:
+		case StateDayView:
 			switch msg.String() {
-			case "esc", "n":
+			case "esc", "q", "n", "h", "left":
 				m.state = StateCalendar
 			case "up", "k":
-				m.deleteListCursor--
-				if m.deleteListCursor < 0 {
-					m.deleteListCursor = len(m.deleteListIndices) - 1
+				m.dayEventCursor--
+				if m.dayEventCursor < 0 {
+					m.dayEventCursor = len(m.dayEventIndices) - 1
 				}
 			case "down", "j":
-				m.deleteListCursor++
-				if m.deleteListCursor >= len(m.deleteListIndices) {
-					m.deleteListCursor = 0
+				m.dayEventCursor++
+				if m.dayEventCursor >= len(m.dayEventIndices) {
+					m.dayEventCursor = 0
 				}
-			case "enter", "y", "d", "x":
-				m.eventToDeleteIndex = m.deleteListIndices[m.deleteListCursor]
+			case "d", "x", "delete":
+				m.eventToDeleteIndex = m.dayEventIndices[m.dayEventCursor]
 				m.state = StateConfirmDelete
+			case " ":
+				// Toggle Completed status
+				actualIndex := m.dayEventIndices[m.dayEventCursor]
+				m.events[actualIndex].Completed = !m.events[actualIndex].Completed
+				_ = saveEvents("events.json", m.events)
 			}
 
 		case StateConfirmDelete:
@@ -156,13 +174,32 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.events = append(m.events[:m.eventToDeleteIndex], m.events[m.eventToDeleteIndex+1:]...)
 					_ = saveEvents("events.json", m.events)
 				}
-				m.state = StateCalendar
 				m.eventToDeleteIndex = -1
-				m.deleteListIndices = []int{}
+				
+				// Once the item is deleted out of the master m.events slice, we need to completely rebuild 
+				// the local day array to stay synchronized and see if we should remain in DayView.
+				m.dayEventIndices = []int{}
+				for i, e := range m.events {
+					if e.Date.Year() == m.selectedDate.Year() &&
+						e.Date.Month() == m.selectedDate.Month() &&
+						e.Date.Day() == m.selectedDate.Day() {
+						m.dayEventIndices = append(m.dayEventIndices, i)
+					}
+				}
+				
+				if len(m.dayEventIndices) > 0 {
+					// Clamp cursor to avoid out-of-bounds panics
+					if m.dayEventCursor >= len(m.dayEventIndices) {
+						m.dayEventCursor = len(m.dayEventIndices) - 1
+					}
+					m.state = StateDayView
+				} else {
+					// We've deleted the last event on this day, boot back to root.
+					m.state = StateCalendar
+				}
 			case "n", "esc": // Cancel
-				m.state = StateCalendar
+				m.state = StateDayView
 				m.eventToDeleteIndex = -1
-				m.deleteListIndices = []int{}
 			}
 		}
 

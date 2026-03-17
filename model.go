@@ -14,16 +14,17 @@ type AppState int
 const (
 	StateCalendar AppState = iota
 	StateAddEvent
-	StateSelectDelete
+	StateDayView
 	StateConfirmDelete
 )
 
 // Event represents a single event in the calendar.
 // It includes logic fields to compute transient properties like "Days until Date".
 type Event struct {
-	Title    string    `json:"title"`
-	Date     time.Time `json:"date"`
-	Category string    `json:"category"`
+	Title     string    `json:"title"`
+	Date      time.Time `json:"date"`
+	Category  string    `json:"category"`
+	Completed bool      `json:"completed"`
 	// Note: "Days until Date" should be a computed helper method, not necessarily saved to JSON.
 }
 
@@ -55,11 +56,11 @@ type appModel struct {
 	// selectedDate tracks the user's cursor on the calendar.
 	selectedDate time.Time
 
-	// deleteListIndices stores the global indices for all events on the selectedDate currently being viewed for deletion.
-	deleteListIndices []int
+	// dayEventIndices stores the global indices for all events on the selectedDate currently being viewed.
+	dayEventIndices []int
 
-	// deleteListCursor tracks which index in deleteListIndices we are currently focused on.
-	deleteListCursor int
+	// dayEventCursor tracks which index in dayEventIndices we are currently focused on.
+	dayEventCursor int
 
 	// eventToDeleteIndex tracks the final target index of the event to delete when the confirmation modal is active.
 	eventToDeleteIndex int
@@ -101,8 +102,8 @@ func initialModel() appModel {
 		state:              StateCalendar,
 		currentDate:        now,
 		selectedDate:       now,
-		deleteListIndices:  []int{},
-		deleteListCursor:   0,
+		dayEventIndices:    []int{},
+		dayEventCursor:     0,
 		eventToDeleteIndex: -1,
 		titleInput:         ti,
 		dateInput:          di,

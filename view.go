@@ -20,7 +20,7 @@ func (m appModel) View() string {
 		content = m.renderCalendarView(false)
 	case StateAddEvent:
 		content = m.renderAddEventForm()
-	case StateSelectDelete, StateConfirmDelete:
+	case StateDayView, StateConfirmDelete:
 		content = m.renderCalendarView(true)
 	}
 
@@ -105,7 +105,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 	grid := lipgloss.JoinVertical(lipgloss.Left, gridRows...)
 
-	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nn/enter: Add • d/x: Delete • q/esc: Quit")
+	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event • q/esc: Quit")
 
 	calendarBlock := lipgloss.JoinVertical(lipgloss.Center, header, "", dowRow, grid, instructions)
 
@@ -119,9 +119,9 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("y: Yes • n: No"))
 	} else {
 		titleStr := "Events for %s"
-		if showDeleteModal && m.state == StateSelectDelete {
-			titleStr = "Select Event on %s"
-			sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Up/Down: Select • Enter: Confirm") + "\n\n")
+		if showDeleteModal && m.state == StateDayView {
+			titleStr = "Events on %s"
+			sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Up/Down: Select • Space: Complete\nd/x: Delete • q/Esc: Back") + "\n\n")
 		}
 
 		sidePanelTitle := lipgloss.NewStyle().Bold(true).Border(lipgloss.NormalBorder(), false, false, true, false).Render(fmt.Sprintf(titleStr, m.selectedDate.Format("Jan 02")))
@@ -135,9 +135,13 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 				foundEvent = true
 
 				titleStyle := lipgloss.NewStyle().Bold(true)
-				if m.state == StateSelectDelete && displayIndex == m.deleteListCursor {
+				if m.state == StateDayView && displayIndex == m.dayEventCursor {
 					// Highlight the selected event
 					titleStyle = titleStyle.Foreground(lipgloss.Color("0")).Background(lipgloss.Color("196"))
+				}
+
+				if e.Completed {
+					titleStyle = titleStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
 				}
 
 				titleStr := titleStyle.Render(e.Title)
@@ -145,16 +149,37 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 				days := e.DaysUntil()
 				var daysStr string
+				
+				dayStyle := lipgloss.NewStyle()
+				if e.Completed {
+					dayStyle = dayStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
+				}
+				
 				if days == 0 {
-					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render("Today!")
+					if !e.Completed {
+						dayStyle = dayStyle.Foreground(lipgloss.Color("202"))
+					}
+					daysStr = dayStyle.Render("Today!")
 				} else if days == 1 {
-					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render("Tomorrow")
+					if !e.Completed {
+						dayStyle = dayStyle.Foreground(lipgloss.Color("42"))
+					}
+					daysStr = dayStyle.Render("Tomorrow")
 				} else if days == -1 {
-					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Yesterday")
+					if !e.Completed {
+						dayStyle = dayStyle.Foreground(lipgloss.Color("241"))
+					}
+					daysStr = dayStyle.Render("Yesterday")
 				} else if days < -1 {
-					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(fmt.Sprintf("%d days ago", -days))
+					if !e.Completed {
+						dayStyle = dayStyle.Foreground(lipgloss.Color("241"))
+					}
+					daysStr = dayStyle.Render(fmt.Sprintf("%d days ago", -days))
 				} else {
-					daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("In %d days", days))
+					if !e.Completed {
+						dayStyle = dayStyle.Foreground(lipgloss.Color("42"))
+					}
+					daysStr = dayStyle.Render(fmt.Sprintf("In %d days", days))
 				}
 
 				sidePanel.WriteString(fmt.Sprintf("%s %s\n%s\n\n", titleStr, catStr, daysStr))

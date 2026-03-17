@@ -40,9 +40,17 @@ A beautiful, interactive calendar widget for your terminal, written in Go using 
 | `l` / `Right Arrow` | Move cursor one day forward |
 | `k` / `Up Arrow` | Move cursor one week backward |
 | `j` / `Down Arrow` | Move cursor one week forward |
-| `n` / `Enter` | Open the "Add Event" form (auto-fills current selected date) |
-| `d` / `x` | Delete the first event on the currently selected date |
+| `Enter` | **Select Day** (opens Day View if events exist, Add Event form otherwise) |
+| `n` | Open the "Add Event" form (auto-fills current selected date) |
 | `q` / `Esc` / `Ctrl+C` | Quit the application |
+
+### Day View 
+| Key | Action |
+| --- | --- |
+| `Up` / `Down` | Traverse through multiple events on the active day |
+| `Spacebar` | Mark the highlighted event as Completed (draws a strikethrough) |
+| `d` / `x` | Prompt the Delete Confirmation menu for the highlighted event |
+| `Esc` / `Left arrow` | Close the Day View and return focus to the calendar board |
 
 ### Add Event Form
 | Key | Action |
