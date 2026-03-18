@@ -48,6 +48,7 @@ To sync your events with your GitHub repository, press `s` while on the calendar
 | `Enter` | **Select Day** (opens Day View if events exist, Add Event form otherwise) |
 | `n` | Open the "Add Event" form (auto-fills current selected date) |
 | `s` | **Sync Events** (executes git add, commit, and push on events.json) |
+| `p` | **Pull Events** (executes git pull to update events from the remote repo) |
 | `q` / `Esc` / `Ctrl+C` | Quit the application |
 
 ### Day View 

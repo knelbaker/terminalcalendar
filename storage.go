@@ -60,3 +60,13 @@ func syncEventsWithGit() error {
 
 	return nil
 }
+
+// pullEventsWithGit shells out to git to automatically pull changes from the remote tracking branch
+func pullEventsWithGit() error {
+	cmdPull := exec.Command("git", "pull")
+	out, err := cmdPull.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%v: %s", err, string(out))
+	}
+	return nil
+}

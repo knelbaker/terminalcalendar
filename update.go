@@ -9,6 +9,12 @@ import (
 // syncCompleteMsg is used to report the result of Git push back to the main thread
 type syncCompleteMsg struct{ err error }
 
+// pullCompleteMsg is used to report the result of Git pull back to the main thread
+type pullCompleteMsg struct {
+	err       error
+	newEvents []Event
+}
+
 // Update handles incoming messages (keypresses, window resizing, etc.)
 // and updates the model state accordingly.
 func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -20,6 +26,15 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.syncStatus = "Sync Failed: " + msg.err.Error()
 		} else {
 			m.syncStatus = "Synced!"
+		}
+		return m, nil
+
+	case pullCompleteMsg:
+		if msg.err != nil {
+			m.syncStatus = "Pull Failed: " + msg.err.Error()
+		} else {
+			m.syncStatus = "Pull Complete!"
+			m.events = msg.newEvents
 		}
 		return m, nil
 
@@ -76,6 +91,17 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, func() tea.Msg {
 					err := syncEventsWithGit()
 					return syncCompleteMsg{err: err}
+				}
+			case "p":
+				m.syncStatus = "Pulling..."
+				return m, func() tea.Msg {
+					err := pullEventsWithGit()
+					if err != nil {
+						return pullCompleteMsg{err: err}
+					}
+					// If pull succeeded, read the newly updated file
+					newEvents, readErr := loadEvents("events.json")
+					return pullCompleteMsg{err: readErr, newEvents: newEvents}
 				}
 			case "right", "l":
 				m.selectedDate = m.selectedDate.AddDate(0, 0, 1)

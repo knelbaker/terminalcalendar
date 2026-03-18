@@ -105,12 +105,14 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 	grid := lipgloss.JoinVertical(lipgloss.Left, gridRows...)
 
-	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event\ns: Sync • q/esc: Quit")
+	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event\ns: Sync • p: Pull • q/esc: Quit")
 
 	var syncText string
 	if m.syncStatus != "" {
 		style := lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
-		if len(m.syncStatus) > 10 && m.syncStatus[:10] == "Sync Failed" {
+		if len(m.syncStatus) > 11 && m.syncStatus[:11] == "Pull Failed" {
+			style = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+		} else if len(m.syncStatus) > 11 && m.syncStatus[:11] == "Sync Failed" {
 			style = lipgloss.NewStyle().Foreground(lipgloss.Color("196")) // red on error
 		}
 		syncText = "\n\n" + style.Render(m.syncStatus)
