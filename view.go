@@ -105,9 +105,18 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 	grid := lipgloss.JoinVertical(lipgloss.Left, gridRows...)
 
-	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event • q/esc: Quit")
+	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event\ns: Sync • q/esc: Quit")
 
-	calendarBlock := lipgloss.JoinVertical(lipgloss.Center, header, "", dowRow, grid, instructions)
+	var syncText string
+	if m.syncStatus != "" {
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
+		if len(m.syncStatus) > 10 && m.syncStatus[:10] == "Sync Failed" {
+			style = lipgloss.NewStyle().Foreground(lipgloss.Color("196")) // red on error
+		}
+		syncText = "\n\n" + style.Render(m.syncStatus)
+	}
+
+	calendarBlock := lipgloss.JoinVertical(lipgloss.Center, header, "", dowRow, grid, instructions, syncText)
 
 	// Panel Content
 	var sidePanel strings.Builder

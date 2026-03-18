@@ -32,6 +32,10 @@ A beautiful, interactive calendar widget for your terminal, written in Go using 
    ```
    *Alternatively, you can build an executable binary using `go build` and run `./terminalcalendar`.*
 
+## Syncing Events
+
+To sync your events with your GitHub repository, press `s` while on the calendar view. This will execute `git add events.json`, `git commit -m "Auto-sync calendar events"`, and `git push`. In order for this to work properly, you must run the application inside a separate git repository with a remote configured. If you wish to keep your events local, do not press `s`.
+
 ## Keybinds
 
 ### Calendar View
@@ -43,6 +47,7 @@ A beautiful, interactive calendar widget for your terminal, written in Go using 
 | `j` / `Down Arrow` | Move cursor one week forward |
 | `Enter` | **Select Day** (opens Day View if events exist, Add Event form otherwise) |
 | `n` | Open the "Add Event" form (auto-fills current selected date) |
+| `s` | **Sync Events** (executes git add, commit, and push on events.json) |
 | `q` / `Esc` / `Ctrl+C` | Quit the application |
 
 ### Day View 

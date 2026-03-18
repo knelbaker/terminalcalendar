@@ -65,6 +65,9 @@ type appModel struct {
 	// eventToDeleteIndex tracks the final target index of the event to delete when the confirmation modal is active.
 	eventToDeleteIndex int
 
+	// syncStatus displays messages about Git background syncing.
+	syncStatus string
+
 	// width and height track the current terminal dimensions.
 	width  int
 	height int
@@ -105,6 +108,7 @@ func initialModel() appModel {
 		dayEventIndices:    []int{},
 		dayEventCursor:     0,
 		eventToDeleteIndex: -1,
+		syncStatus:         "",
 		titleInput:         ti,
 		dateInput:          di,
 		categoryInput:      ci,

@@ -6,12 +6,23 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// syncCompleteMsg is used to report the result of Git push back to the main thread
+type syncCompleteMsg struct{ err error }
+
 // Update handles incoming messages (keypresses, window resizing, etc.)
 // and updates the model state accordingly.
 func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case syncCompleteMsg:
+		if msg.err != nil {
+			m.syncStatus = "Sync Failed: " + msg.err.Error()
+		} else {
+			m.syncStatus = "Synced!"
+		}
+		return m, nil
+
 	case tea.KeyMsg:
 		// Global quit keys
 		if msg.String() == "ctrl+c" {
@@ -60,6 +71,12 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.titleInput.Focus()
 				m.dateInput.Blur()
 				m.categoryInput.Blur()
+			case "s":
+				m.syncStatus = "Syncing..."
+				return m, func() tea.Msg {
+					err := syncEventsWithGit()
+					return syncCompleteMsg{err: err}
+				}
 			case "right", "l":
 				m.selectedDate = m.selectedDate.AddDate(0, 0, 1)
 				if m.selectedDate.Month() != m.currentDate.Month() {

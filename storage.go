@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 )
 
 // loadEvents reads the events.json file from the disk and parses it into a slice of Event structs.
@@ -33,4 +35,28 @@ func saveEvents(filename string, events []Event) error {
 	}
 
 	return os.WriteFile(filename, data, 0644)
+}
+
+// syncEventsWithGit shells out to git to automatically add, commit, and push events.json
+func syncEventsWithGit() error {
+	// git add events.json
+	cmdAdd := exec.Command("git", "add", "events.json")
+	if err := cmdAdd.Run(); err != nil {
+		return err
+	}
+
+	// git commit -m "Auto-sync calendar events"
+	// We ignore commit errors since it will fail if there are no changes to the file,
+	// which is perfectly fine—we still want to attempt a push just in case!
+	cmdCommit := exec.Command("git", "commit", "-m", "Auto-sync calendar events")
+	_ = cmdCommit.Run()
+
+	// git push
+	cmdPush := exec.Command("git", "push")
+	out, err := cmdPush.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%v: %s", err, string(out))
+	}
+
+	return nil
 }
