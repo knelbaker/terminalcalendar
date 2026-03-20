@@ -72,6 +72,8 @@ type appModel struct {
 	width  int
 	height int
 
+	autoSync bool
+
 	titleInput    textinput.Model
 	dateInput     textinput.Model
 	categoryInput textinput.Model
@@ -79,7 +81,7 @@ type appModel struct {
 }
 
 // initialModel returns the starting state of the application.
-func initialModel() appModel {
+func initialModel(autoSync bool) appModel {
 	ti := textinput.New()
 	ti.Placeholder = "Event Title"
 	ti.Focus()
@@ -113,10 +115,25 @@ func initialModel() appModel {
 		dateInput:          di,
 		categoryInput:      ci,
 		focusIndex:         0,
+		autoSync:           autoSync,
 	}
 }
 
 // Init initializes the application. This is called once when the program starts.
 func (m appModel) Init() tea.Cmd {
-	return textinput.Blink
+	var cmds []tea.Cmd
+	cmds = append(cmds, textinput.Blink)
+
+	if m.autoSync {
+		cmds = append(cmds, func() tea.Msg {
+			err := pullEventsWithGit()
+			if err != nil {
+				return pullCompleteMsg{err: err}
+			}
+			newEvents, readErr := loadEvents("events.json")
+			return pullCompleteMsg{err: readErr, newEvents: newEvents}
+		})
+	}
+
+	return tea.Batch(cmds...)
 }

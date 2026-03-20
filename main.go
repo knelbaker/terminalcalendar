@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -14,7 +15,10 @@ import (
 // 3. Initialize the bubbletea program with the initial model.
 // 4. Run the bubbletea program and handle any fatal errors.
 func main() {
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	autoSync := flag.Bool("autosync", false, "Automatically pull on start and sync on app exit")
+	flag.Parse()
+
+	p := tea.NewProgram(initialModel(*autoSync), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

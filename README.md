@@ -32,9 +32,16 @@ A beautiful, interactive calendar widget for your terminal, written in Go using 
    ```
    *Alternatively, you can build an executable binary using `go build` and run `./terminalcalendar`.*
 
+   If you would like the application to automatically `git pull` when it opens and `git push` when it closes without requiring you to use the manual keybinds, you can append the `-autosync` flag!
+   ```bash
+   go run . -autosync
+   ```
+
 ## Syncing Events
 
-To sync your events with your GitHub repository, press `s` while on the calendar view. This will execute `git add events.json`, `git commit -m "Auto-sync calendar events"`, and `git push`. In order for this to work properly, you must run the application inside a separate git repository with a remote configured. If you wish to keep your events local, do not press `s`.
+To sync your events with your GitHub repository manually, press `s` while on the calendar view to execute `git push`, or press `p` to execute `git pull`. 
+
+In order for syncing to work properly (whether automated via `-autosync` or triggered by the manual keybinds), you must run the application inside a git repository with a remote configured. If you wish to keep your events local, do not press `s`.
 
 ## Keybinds
 

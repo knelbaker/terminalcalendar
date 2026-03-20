@@ -41,6 +41,9 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// Global quit keys
 		if msg.String() == "ctrl+c" {
+			if m.autoSync {
+				_ = syncEventsWithGit()
+			}
 			return m, tea.Quit
 		}
 
@@ -48,6 +51,9 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case StateCalendar:
 			switch msg.String() {
 			case "q", "esc":
+				if m.autoSync {
+					_ = syncEventsWithGit()
+				}
 				return m, tea.Quit
 			case "enter":
 				// Gather ALL events on the selected date
