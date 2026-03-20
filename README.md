@@ -63,6 +63,7 @@ In order for syncing to work properly (whether automated via `-autosync` or trig
 | --- | --- |
 | `Up` / `Down` | Traverse through multiple events on the active day |
 | `Spacebar` | Mark the highlighted event as Completed (draws a strikethrough) |
+| `e` | Drop the highlighted event into the Edit Event menu to modify it |
 | `d` / `x` | Prompt the Delete Confirmation menu for the highlighted event |
 | `Esc` / `Left arrow` | Close the Day View and return focus to the calendar board |
 

@@ -85,6 +85,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "n":
 				// Explicitly switch to add event state regardless of whether day has events
 				m.state = StateAddEvent
+				m.isEditing = false
+				m.eventToEditIndex = -1
 				m.titleInput.SetValue("")
 				m.dateInput.SetValue(m.selectedDate.Format("2006-01-02"))
 				m.categoryInput.SetValue("")
@@ -135,6 +137,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "esc":
 				m.state = StateCalendar
+				m.isEditing = false
+				m.eventToEditIndex = -1
 			case "tab", "shift+tab":
 				s := msg.String()
 
@@ -166,12 +170,22 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Process form
 				parsedDate, err := time.Parse("2006-01-02", m.dateInput.Value())
 				if err == nil && m.titleInput.Value() != "" {
-					newEvent := Event{
-						Title:    m.titleInput.Value(),
-						Date:     parsedDate,
-						Category: m.categoryInput.Value(),
+					if m.isEditing && m.eventToEditIndex >= 0 && m.eventToEditIndex < len(m.events) {
+						// Update existing event
+						m.events[m.eventToEditIndex].Title = m.titleInput.Value()
+						m.events[m.eventToEditIndex].Date = parsedDate
+						m.events[m.eventToEditIndex].Category = m.categoryInput.Value()
+						m.isEditing = false
+						m.eventToEditIndex = -1
+					} else {
+						// Create new event
+						newEvent := Event{
+							Title:    m.titleInput.Value(),
+							Date:     parsedDate,
+							Category: m.categoryInput.Value(),
+						}
+						m.events = append(m.events, newEvent)
 					}
-					m.events = append(m.events, newEvent)
 
 					// Save to JSON
 					_ = saveEvents("events.json", m.events)
@@ -209,6 +223,22 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "d", "x", "delete":
 				m.eventToDeleteIndex = m.dayEventIndices[m.dayEventCursor]
 				m.state = StateConfirmDelete
+			case "e":
+				// Switch to edit mode
+				m.isEditing = true
+				m.eventToEditIndex = m.dayEventIndices[m.dayEventCursor]
+				
+				// Populate form inputs
+				targetEvent := m.events[m.eventToEditIndex]
+				m.titleInput.SetValue(targetEvent.Title)
+				m.dateInput.SetValue(targetEvent.Date.Format("2006-01-02"))
+				m.categoryInput.SetValue(targetEvent.Category)
+				
+				m.focusIndex = 0
+				m.titleInput.Focus()
+				m.dateInput.Blur()
+				m.categoryInput.Blur()
+				m.state = StateAddEvent
 			case " ":
 				// Toggle Completed status
 				actualIndex := m.dayEventIndices[m.dayEventCursor]

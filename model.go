@@ -65,6 +65,9 @@ type appModel struct {
 	// eventToDeleteIndex tracks the final target index of the event to delete when the confirmation modal is active.
 	eventToDeleteIndex int
 
+	isEditing        bool
+	eventToEditIndex int
+
 	// syncStatus displays messages about Git background syncing.
 	syncStatus string
 
@@ -110,6 +113,8 @@ func initialModel(autoSync bool) appModel {
 		dayEventIndices:    []int{},
 		dayEventCursor:     0,
 		eventToDeleteIndex: -1,
+		isEditing:          false,
+		eventToEditIndex:   -1,
 		syncStatus:         "",
 		titleInput:         ti,
 		dateInput:          di,

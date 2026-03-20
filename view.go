@@ -132,7 +132,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		titleStr := "Events for %s"
 		if showDeleteModal && m.state == StateDayView {
 			titleStr = "Events on %s"
-			sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Up/Down: Select • Space: Complete\nd/x: Delete • q/Esc: Back") + "\n\n")
+			sidePanel.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Up/Down: Select • Space: Complete\nd/x: Delete • e: Edit • q/Esc: Back") + "\n\n")
 		}
 
 		sidePanelTitle := lipgloss.NewStyle().Bold(true).Border(lipgloss.NormalBorder(), false, false, true, false).Render(fmt.Sprintf(titleStr, m.selectedDate.Format("Jan 02")))
@@ -218,7 +218,11 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 func (m appModel) renderAddEventForm() string {
 	var b strings.Builder
 
-	b.WriteString("Add New Event\n\n")
+	if m.isEditing {
+		b.WriteString("Edit Event\n\n")
+	} else {
+		b.WriteString("Add New Event\n\n")
+	}
 
 	b.WriteString(m.titleInput.View() + "\n")
 	b.WriteString(m.dateInput.View() + "\n")
