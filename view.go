@@ -48,9 +48,29 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 	var gridRows []string
 	var currentRow []string
 
-	// Pad start of month
+	// Pad start of month with previous month dates
+	prevMonth := m.currentDate.AddDate(0, -1, 0)
+	daysInPrevMonth := time.Date(prevMonth.Year(), prevMonth.Month()+1, 0, 0, 0, 0, 0, prevMonth.Location()).Day()
+	
 	for i := 0; i < startDay; i++ {
-		currentRow = append(currentRow, lipgloss.NewStyle().Width(4).Render(""))
+		dayNum := daysInPrevMonth - startDay + 1 + i
+		dateStr := fmt.Sprintf("%2d", dayNum)
+		
+		hasEvent := false
+		for _, e := range m.events {
+			if e.Date.Year() == prevMonth.Year() && e.Date.Month() == prevMonth.Month() && e.Date.Day() == dayNum {
+				hasEvent = true
+				break
+			}
+		}
+
+		style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
+		if hasEvent {
+			dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color("241")).Render("•")
+		} else {
+			dateStr = dateStr + "\n "
+		}
+		currentRow = append(currentRow, style.Render(dateStr))
 	}
 
 	// Render days
@@ -95,10 +115,29 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		}
 	}
 
-	// Pad end of month
+	// Pad end of month with next month dates
 	if len(currentRow) > 0 {
+		nextMonth := m.currentDate.AddDate(0, 1, 0)
+		dayNum := 1
 		for len(currentRow) < 7 {
-			currentRow = append(currentRow, lipgloss.NewStyle().Width(4).Render(""))
+			dateStr := fmt.Sprintf("%2d", dayNum)
+			
+			hasEvent := false
+			for _, e := range m.events {
+				if e.Date.Year() == nextMonth.Year() && e.Date.Month() == nextMonth.Month() && e.Date.Day() == dayNum {
+					hasEvent = true
+					break
+				}
+			}
+
+			style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
+			if hasEvent {
+				dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color("241")).Render("•")
+			} else {
+				dateStr = dateStr + "\n "
+			}
+			currentRow = append(currentRow, style.Render(dateStr))
+			dayNum++
 		}
 		gridRows = append(gridRows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 	}
