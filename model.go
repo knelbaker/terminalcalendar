@@ -104,6 +104,23 @@ func initialModel(autoSync bool) appModel {
 	events, _ := loadEvents("events.json")
 
 	now := time.Now()
+	twoMonthsAgo := now.AddDate(0, -2, 0)
+
+	var validEvents []Event
+	var purged bool
+	for _, e := range events {
+		// If the event date is strictly before 2 months ago today
+		if e.Date.Before(twoMonthsAgo) {
+			purged = true
+		} else {
+			validEvents = append(validEvents, e)
+		}
+	}
+
+	if purged {
+		events = validEvents
+		_ = saveEvents("events.json", events)
+	}
 
 	return appModel{
 		events:             events,
