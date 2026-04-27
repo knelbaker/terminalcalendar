@@ -57,16 +57,23 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		dateStr := fmt.Sprintf("%2d", dayNum)
 		
 		hasEvent := false
+		allCompleted := true
 		for _, e := range m.events {
 			if e.Date.Year() == prevMonth.Year() && e.Date.Month() == prevMonth.Month() && e.Date.Day() == dayNum {
 				hasEvent = true
-				break
+				if !e.Completed {
+					allCompleted = false
+				}
 			}
 		}
 
 		style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
 		if hasEvent {
-			dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color("241")).Render("•")
+			dotColor := "241"
+			if allCompleted {
+				dotColor = "42"
+			}
+			dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color(dotColor)).Render("•")
 		} else {
 			dateStr = dateStr + "\n "
 		}
@@ -80,12 +87,15 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 		// Check for events
 		hasEvent := false
+		allCompleted := true
 		for _, e := range m.events {
 			if e.Date.Year() == m.currentDate.Year() &&
 				e.Date.Month() == m.currentDate.Month() &&
 				e.Date.Day() == day {
 				hasEvent = true
-				break
+				if !e.Completed {
+					allCompleted = false
+				}
 			}
 		}
 
@@ -102,7 +112,11 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 		if hasEvent {
 			// Add a dot under the number
-			dateStr = dateStr + "\n" + styleEventDot.Render("•")
+			if allCompleted {
+				dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color("42")).Render("•")
+			} else {
+				dateStr = dateStr + "\n" + styleEventDot.Render("•")
+			}
 		} else {
 			dateStr = dateStr + "\n "
 		}
@@ -123,16 +137,23 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 			dateStr := fmt.Sprintf("%2d", dayNum)
 			
 			hasEvent := false
+			allCompleted := true
 			for _, e := range m.events {
 				if e.Date.Year() == nextMonth.Year() && e.Date.Month() == nextMonth.Month() && e.Date.Day() == dayNum {
 					hasEvent = true
-					break
+					if !e.Completed {
+						allCompleted = false
+					}
 				}
 			}
 
 			style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
 			if hasEvent {
-				dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color("241")).Render("•")
+				dotColor := "241"
+				if allCompleted {
+					dotColor = "42"
+				}
+				dateStr = dateStr + "\n" + styleEventDot.Copy().Foreground(lipgloss.Color(dotColor)).Render("•")
 			} else {
 				dateStr = dateStr + "\n "
 			}
