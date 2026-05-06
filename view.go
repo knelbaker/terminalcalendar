@@ -321,19 +321,47 @@ func (m appModel) renderTodoList() string {
 				prefix = "> "
 				titleStyle = titleStyle.Foreground(lipgloss.Color("0")).Background(lipgloss.Color("196"))
 			}
+
+			if e.Completed {
+				titleStyle = titleStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
+			}
 			
 			days := e.DaysUntil()
 			var daysStr string
-			if days == 0 {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render("Today!")
-			} else if days == 1 {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render("Tomorrow")
-			} else {
-				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("In %d days", days))
+			
+			dayStyle := lipgloss.NewStyle()
+			if e.Completed {
+				dayStyle = dayStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
 			}
 			
-			catStr := lipgloss.NewStyle().Foreground(colorHighlight).Render(fmt.Sprintf("[%s]", e.Category))
-			dateFmt := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(e.Date.Format("Jan 02"))
+			if days == 0 {
+				if !e.Completed {
+					dayStyle = dayStyle.Foreground(lipgloss.Color("202"))
+				}
+				daysStr = dayStyle.Render("Today!")
+			} else if days == 1 {
+				if !e.Completed {
+					dayStyle = dayStyle.Foreground(lipgloss.Color("42"))
+				}
+				daysStr = dayStyle.Render("Tomorrow")
+			} else {
+				if !e.Completed {
+					dayStyle = dayStyle.Foreground(lipgloss.Color("42"))
+				}
+				daysStr = dayStyle.Render(fmt.Sprintf("In %d days", days))
+			}
+			
+			catStyle := lipgloss.NewStyle().Foreground(colorHighlight)
+			if e.Completed {
+				catStyle = catStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
+			}
+			catStr := catStyle.Render(fmt.Sprintf("[%s]", e.Category))
+			
+			dateStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+			if e.Completed {
+				dateStyle = dateStyle.Strikethrough(true)
+			}
+			dateFmt := dateStyle.Render(e.Date.Format("Jan 02"))
 
 			b.WriteString(fmt.Sprintf("%s%s %s - %s (%s)\n\n", prefix, titleStyle.Render(e.Title), catStr, daysStr, dateFmt))
 		}

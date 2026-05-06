@@ -313,16 +313,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case " ":
 				if len(m.todoIndices) > 0 {
 					actualIndex := m.todoIndices[m.todoCursor]
-					m.events[actualIndex].Completed = true
+					m.events[actualIndex].Completed = !m.events[actualIndex].Completed
 					_ = saveEvents("events.json", m.events)
-					
-					// Remove the item from todoIndices since it's now completed
-					m.todoIndices = append(m.todoIndices[:m.todoCursor], m.todoIndices[m.todoCursor+1:]...)
-					if m.todoCursor >= len(m.todoIndices) && len(m.todoIndices) > 0 {
-						m.todoCursor = len(m.todoIndices) - 1
-					} else if len(m.todoIndices) == 0 {
-						m.todoCursor = 0
-					}
 				}
 			}
 		}
