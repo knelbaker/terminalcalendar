@@ -16,6 +16,7 @@ const (
 	StateAddEvent
 	StateDayView
 	StateConfirmDelete
+	StateTodoList
 )
 
 // Event represents a single event in the calendar.
@@ -61,6 +62,9 @@ type appModel struct {
 
 	// dayEventCursor tracks which index in dayEventIndices we are currently focused on.
 	dayEventCursor int
+
+	todoIndices []int
+	todoCursor  int
 
 	// eventToDeleteIndex tracks the final target index of the event to delete when the confirmation modal is active.
 	eventToDeleteIndex int
@@ -129,6 +133,8 @@ func initialModel(autoSync bool) appModel {
 		selectedDate:       now,
 		dayEventIndices:    []int{},
 		dayEventCursor:     0,
+		todoIndices:        []int{},
+		todoCursor:         0,
 		eventToDeleteIndex: -1,
 		isEditing:          false,
 		eventToEditIndex:   -1,

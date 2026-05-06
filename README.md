@@ -54,6 +54,7 @@ In order for syncing to work properly (whether automated via `-autosync` or trig
 | `j` / `Down Arrow` | Move cursor one week forward |
 | `Enter` | **Select Day** (opens Day View if events exist, Add Event form otherwise) |
 | `n` | Open the "Add Event" form (auto-fills current selected date) |
+| `t` | Open the **Upcoming Todo List** view |
 | `s` | **Sync Events** (executes git add, commit, and push on events.json) |
 | `p` | **Pull Events** (executes git pull to update events from the remote repo) |
 | `q` / `Esc` / `Ctrl+C` | Quit the application |
@@ -66,6 +67,13 @@ In order for syncing to work properly (whether automated via `-autosync` or trig
 | `e` | Drop the highlighted event into the Edit Event menu to modify it |
 | `d` / `x` | Prompt the Delete Confirmation menu for the highlighted event |
 | `Esc` / `Left arrow` | Close the Day View and return focus to the calendar board |
+
+### Todo List View
+| Key | Action |
+| --- | --- |
+| `Up` / `Down` | Navigate through upcoming uncompleted events |
+| `Spacebar` | Mark the highlighted event as Completed and remove it from the list |
+| `t` / `Esc` / `q` | Close the Todo List and return to the calendar view |
 
 ### Add Event Form
 

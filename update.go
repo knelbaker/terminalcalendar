@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sort"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -111,6 +112,18 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					newEvents, readErr := loadEvents("events.json")
 					return pullCompleteMsg{err: readErr, newEvents: newEvents}
 				}
+			case "t":
+				m.todoIndices = []int{}
+				for i, e := range m.events {
+					if !e.Completed && e.DaysUntil() >= 0 {
+						m.todoIndices = append(m.todoIndices, i)
+					}
+				}
+				sort.Slice(m.todoIndices, func(i, j int) bool {
+					return m.events[m.todoIndices[i]].Date.Before(m.events[m.todoIndices[j]].Date)
+				})
+				m.todoCursor = 0
+				m.state = StateTodoList
 			case "right", "l":
 				m.selectedDate = m.selectedDate.AddDate(0, 0, 1)
 				if m.selectedDate.Month() != m.currentDate.Month() {
@@ -279,6 +292,38 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "n", "esc": // Cancel
 				m.state = StateDayView
 				m.eventToDeleteIndex = -1
+			}
+
+		case StateTodoList:
+			switch msg.String() {
+			case "esc", "q", "t":
+				m.state = StateCalendar
+			case "up", "k":
+				m.todoCursor--
+				if m.todoCursor < 0 {
+					m.todoCursor = len(m.todoIndices) - 1
+				}
+			case "down", "j":
+				if len(m.todoIndices) > 0 {
+					m.todoCursor++
+					if m.todoCursor >= len(m.todoIndices) {
+						m.todoCursor = 0
+					}
+				}
+			case " ":
+				if len(m.todoIndices) > 0 {
+					actualIndex := m.todoIndices[m.todoCursor]
+					m.events[actualIndex].Completed = true
+					_ = saveEvents("events.json", m.events)
+					
+					// Remove the item from todoIndices since it's now completed
+					m.todoIndices = append(m.todoIndices[:m.todoCursor], m.todoIndices[m.todoCursor+1:]...)
+					if m.todoCursor >= len(m.todoIndices) && len(m.todoIndices) > 0 {
+						m.todoCursor = len(m.todoIndices) - 1
+					} else if len(m.todoIndices) == 0 {
+						m.todoCursor = 0
+					}
+				}
 			}
 		}
 

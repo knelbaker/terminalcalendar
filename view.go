@@ -22,6 +22,8 @@ func (m appModel) View() string {
 		content = m.renderAddEventForm()
 	case StateDayView, StateConfirmDelete:
 		content = m.renderCalendarView(true)
+	case StateTodoList:
+		content = m.renderTodoList()
 	}
 
 	return styleAppBox.Width(m.width).Height(m.height).Render(content)
@@ -165,7 +167,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 	grid := lipgloss.JoinVertical(lipgloss.Left, gridRows...)
 
-	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event\ns: Sync • p: Pull • q/esc: Quit")
+	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event • t: Todo List\ns: Sync • p: Pull • q/esc: Quit")
 
 	var syncText string
 	if m.syncStatus != "" {
@@ -290,5 +292,55 @@ func (m appModel) renderAddEventForm() string {
 
 	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Enter: Save • Esc: Cancel • Tab: Next Field"))
 
+	return styleFormContainer.Render(b.String())
+}
+
+// renderTodoList generates the string output for the upcoming To-Do list
+func (m appModel) renderTodoList() string {
+	var b strings.Builder
+	
+	b.WriteString(lipgloss.NewStyle().Bold(true).Border(lipgloss.NormalBorder(), false, false, true, false).Render("Upcoming Todo List"))
+	b.WriteString("\n\n")
+
+	if len(m.todoIndices) == 0 {
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("No upcoming tasks! You're all caught up.\n\n"))
+	} else {
+		// Only display a window around the cursor, e.g. 10 items max
+		startIdx := m.todoCursor - 4
+		if startIdx < 0 { startIdx = 0 }
+		endIdx := startIdx + 8
+		if endIdx > len(m.todoIndices) { endIdx = len(m.todoIndices) }
+		
+		for i := startIdx; i < endIdx; i++ {
+			actualIdx := m.todoIndices[i]
+			e := m.events[actualIdx]
+			
+			prefix := "  "
+			titleStyle := lipgloss.NewStyle().Bold(true)
+			if i == m.todoCursor {
+				prefix = "> "
+				titleStyle = titleStyle.Foreground(lipgloss.Color("0")).Background(lipgloss.Color("196"))
+			}
+			
+			days := e.DaysUntil()
+			var daysStr string
+			if days == 0 {
+				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render("Today!")
+			} else if days == 1 {
+				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render("Tomorrow")
+			} else {
+				daysStr = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("In %d days", days))
+			}
+			
+			catStr := lipgloss.NewStyle().Foreground(colorHighlight).Render(fmt.Sprintf("[%s]", e.Category))
+			dateFmt := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(e.Date.Format("Jan 02"))
+
+			b.WriteString(fmt.Sprintf("%s%s %s - %s (%s)\n\n", prefix, titleStyle.Render(e.Title), catStr, daysStr, dateFmt))
+		}
+	}
+	
+	b.WriteString("\n")
+	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Up/Down: Select • Space: Complete • t/q/Esc: Back"))
+	
 	return styleFormContainer.Render(b.String())
 }
