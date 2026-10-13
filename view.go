@@ -53,11 +53,11 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 	// Pad start of month with previous month dates
 	prevMonth := m.currentDate.AddDate(0, -1, 0)
 	daysInPrevMonth := time.Date(prevMonth.Year(), prevMonth.Month()+1, 0, 0, 0, 0, 0, prevMonth.Location()).Day()
-	
+
 	for i := 0; i < startDay; i++ {
 		dayNum := daysInPrevMonth - startDay + 1 + i
 		dateStr := fmt.Sprintf("%2d", dayNum)
-		
+
 		hasEvent := false
 		allCompleted := true
 		for _, e := range m.events {
@@ -137,7 +137,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		dayNum := 1
 		for len(currentRow) < 7 {
 			dateStr := fmt.Sprintf("%2d", dayNum)
-			
+
 			hasEvent := false
 			allCompleted := true
 			for _, e := range m.events {
@@ -222,12 +222,12 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 
 				days := e.DaysUntil()
 				var daysStr string
-				
+
 				dayStyle := lipgloss.NewStyle()
 				if e.Completed {
 					dayStyle = dayStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
 				}
-				
+
 				if days == 0 {
 					if !e.Completed {
 						dayStyle = dayStyle.Foreground(lipgloss.Color("202"))
@@ -255,6 +255,9 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 					daysStr = dayStyle.Render(fmt.Sprintf("In %d days", days))
 				}
 
+				if e.Time != "" {
+					daysStr = dayStyle.Render(e.Time) + " - " + daysStr
+				}
 				sidePanel.WriteString(fmt.Sprintf("%s %s\n%s\n\n", titleStr, catStr, daysStr))
 				displayIndex++
 			}
@@ -288,7 +291,11 @@ func (m appModel) renderAddEventForm() string {
 
 	b.WriteString(m.titleInput.View() + "\n")
 	b.WriteString(m.dateInput.View() + "\n")
+	b.WriteString("Time: " + m.timeInput.View() + "\n")
 	b.WriteString(m.categoryInput.View() + "\n\n")
+	if m.formError != "" {
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.formError) + "\n\n")
+	}
 
 	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Enter: Save • Esc: Cancel • Tab: Next Field"))
 
@@ -298,7 +305,7 @@ func (m appModel) renderAddEventForm() string {
 // renderTodoList generates the string output for the upcoming To-Do list
 func (m appModel) renderTodoList() string {
 	var b strings.Builder
-	
+
 	b.WriteString(lipgloss.NewStyle().Bold(true).Border(lipgloss.NormalBorder(), false, false, true, false).Render("Upcoming Todo List"))
 	b.WriteString("\n\n")
 
@@ -307,14 +314,18 @@ func (m appModel) renderTodoList() string {
 	} else {
 		// Only display a window around the cursor, e.g. 10 items max
 		startIdx := m.todoCursor - 4
-		if startIdx < 0 { startIdx = 0 }
+		if startIdx < 0 {
+			startIdx = 0
+		}
 		endIdx := startIdx + 8
-		if endIdx > len(m.todoIndices) { endIdx = len(m.todoIndices) }
-		
+		if endIdx > len(m.todoIndices) {
+			endIdx = len(m.todoIndices)
+		}
+
 		for i := startIdx; i < endIdx; i++ {
 			actualIdx := m.todoIndices[i]
 			e := m.events[actualIdx]
-			
+
 			prefix := "  "
 			titleStyle := lipgloss.NewStyle().Bold(true)
 			if i == m.todoCursor {
@@ -325,15 +336,15 @@ func (m appModel) renderTodoList() string {
 			if e.Completed {
 				titleStyle = titleStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
 			}
-			
+
 			days := e.DaysUntil()
 			var daysStr string
-			
+
 			dayStyle := lipgloss.NewStyle()
 			if e.Completed {
 				dayStyle = dayStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
 			}
-			
+
 			if days == 0 {
 				if !e.Completed {
 					dayStyle = dayStyle.Foreground(lipgloss.Color("202"))
@@ -350,25 +361,29 @@ func (m appModel) renderTodoList() string {
 				}
 				daysStr = dayStyle.Render(fmt.Sprintf("In %d days", days))
 			}
-			
+
 			catStyle := lipgloss.NewStyle().Foreground(colorHighlight)
 			if e.Completed {
 				catStyle = catStyle.Strikethrough(true).Foreground(lipgloss.Color("241"))
 			}
 			catStr := catStyle.Render(fmt.Sprintf("[%s]", e.Category))
-			
+
 			dateStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 			if e.Completed {
 				dateStyle = dateStyle.Strikethrough(true)
 			}
-			dateFmt := dateStyle.Render(e.Date.Format("Jan 02"))
+			dateText := e.Date.Format("Jan 02")
+			if e.Time != "" {
+				dateText += " at " + e.Time
+			}
+			dateFmt := dateStyle.Render(dateText)
 
 			b.WriteString(fmt.Sprintf("%s%s %s - %s (%s)\n\n", prefix, titleStyle.Render(e.Title), catStr, daysStr, dateFmt))
 		}
 	}
-	
+
 	b.WriteString("\n")
 	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Up/Down: Select • Space: Complete • t/q/Esc: Back"))
-	
+
 	return styleFormContainer.Render(b.String())
 }

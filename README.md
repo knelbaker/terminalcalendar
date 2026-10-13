@@ -75,7 +75,16 @@ In order for syncing to work properly (whether automated via `-autosync` or trig
 | `Spacebar` | Mark the highlighted event as Completed and remove it from the list |
 | `t` / `Esc` / `q` | Close the Todo List and return to the calendar view |
 
-### Add Event Form
+### Add / Edit Event Form
+
+The form fields are title, date (`YYYY-MM-DD`), time, and category.
+Type four digits for a 24-hour time (for example, `1430` becomes `14:30`). The
+time field accepts only numbers and inserts the colon after the first two digits. Leave it blank for
+a date-only event; `00:00` explicitly means midnight. Editing pre-fills the saved
+time, which you can change or clear. Invalid times display an error while keeping
+your inputs. Times appear in the calendar sidebar, day view, and upcoming todo list.
+Times are local wall-clock values and do not change the event's calendar date or
+day-based countdown. Existing events without times remain date-only events.
 
 ![Add Event Form](pictures/addevent.png)
 
