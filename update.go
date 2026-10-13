@@ -66,7 +66,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.dayEventIndices = append(m.dayEventIndices, i)
 					}
 				}
-				
+
 				if len(m.dayEventIndices) > 0 {
 					// There are events on this day, jump into Day View to browse them
 					m.dayEventCursor = 0
@@ -74,6 +74,11 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					// There are zero events on this day, so pop open the Add Event Form
 					m.state = StateAddEvent
+					m.isEditing = false
+					m.eventToEditIndex = -1
+					m.timeInput.SetValue("")
+					m.timeInput.Blur()
+					m.formError = ""
 					m.titleInput.SetValue("")
 					// Pre-fill date input with the selected date
 					m.dateInput.SetValue(m.selectedDate.Format("2006-01-02"))
@@ -86,6 +91,9 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "n":
 				// Explicitly switch to add event state regardless of whether day has events
 				m.state = StateAddEvent
+				m.timeInput.SetValue("")
+				m.timeInput.Blur()
+				m.formError = ""
 				m.isEditing = false
 				m.eventToEditIndex = -1
 				m.titleInput.SetValue("")
@@ -161,13 +169,14 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.focusIndex++
 				}
 
-				if m.focusIndex > 2 {
+				if m.focusIndex > 3 {
 					m.focusIndex = 0
 				} else if m.focusIndex < 0 {
-					m.focusIndex = 2
+					m.focusIndex = 3
 				}
 
 				m.titleInput.Blur()
+				m.timeInput.Blur()
 				m.dateInput.Blur()
 				m.categoryInput.Blur()
 
@@ -177,16 +186,36 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 1:
 					m.dateInput.Focus()
 				case 2:
+					m.timeInput.Focus()
+				case 3:
 					m.categoryInput.Focus()
 				}
 			case "enter":
 				// Process form
+				m.formError = ""
+				eventTime := m.timeInput.Value()
+				if eventTime != "" {
+					parsedTime, timeErr := time.Parse("15:04", eventTime)
+					if timeErr != nil || parsedTime.Format("15:04") != eventTime {
+						m.formError = "Enter time as HH:MM (00:00-23:59), or leave it blank."
+						return m, nil
+					}
+				}
 				parsedDate, err := time.Parse("2006-01-02", m.dateInput.Value())
+				if err != nil {
+					m.formError = "Enter a valid date as YYYY-MM-DD."
+					return m, nil
+				}
+				if m.titleInput.Value() == "" {
+					m.formError = "Enter an event title."
+					return m, nil
+				}
 				if err == nil && m.titleInput.Value() != "" {
 					if m.isEditing && m.eventToEditIndex >= 0 && m.eventToEditIndex < len(m.events) {
 						// Update existing event
 						m.events[m.eventToEditIndex].Title = m.titleInput.Value()
 						m.events[m.eventToEditIndex].Date = parsedDate
+						m.events[m.eventToEditIndex].Time = eventTime
 						m.events[m.eventToEditIndex].Category = m.categoryInput.Value()
 						m.isEditing = false
 						m.eventToEditIndex = -1
@@ -195,6 +224,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						newEvent := Event{
 							Title:    m.titleInput.Value(),
 							Date:     parsedDate,
+							Time:     eventTime,
 							Category: m.categoryInput.Value(),
 						}
 						m.events = append(m.events, newEvent)
@@ -215,6 +245,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case 1:
 				m.dateInput, cmd = m.dateInput.Update(msg)
 			case 2:
+				m.timeInput, cmd = updateTimeInput(m.timeInput, msg)
+			case 3:
 				m.categoryInput, cmd = m.categoryInput.Update(msg)
 			}
 			return m, cmd
@@ -240,13 +272,16 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Switch to edit mode
 				m.isEditing = true
 				m.eventToEditIndex = m.dayEventIndices[m.dayEventCursor]
-				
+
 				// Populate form inputs
 				targetEvent := m.events[m.eventToEditIndex]
 				m.titleInput.SetValue(targetEvent.Title)
 				m.dateInput.SetValue(targetEvent.Date.Format("2006-01-02"))
 				m.categoryInput.SetValue(targetEvent.Category)
-				
+				m.timeInput.SetValue(targetEvent.Time)
+				m.timeInput.Blur()
+				m.formError = ""
+
 				m.focusIndex = 0
 				m.titleInput.Focus()
 				m.dateInput.Blur()
@@ -267,8 +302,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					_ = saveEvents("events.json", m.events)
 				}
 				m.eventToDeleteIndex = -1
-				
-				// Once the item is deleted out of the master m.events slice, we need to completely rebuild 
+
+				// Once the item is deleted out of the master m.events slice, we need to completely rebuild
 				// the local day array to stay synchronized and see if we should remain in DayView.
 				m.dayEventIndices = []int{}
 				for i, e := range m.events {
@@ -278,7 +313,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.dayEventIndices = append(m.dayEventIndices, i)
 					}
 				}
-				
+
 				if len(m.dayEventIndices) > 0 {
 					// Clamp cursor to avoid out-of-bounds panics
 					if m.dayEventCursor >= len(m.dayEventIndices) {
@@ -322,6 +357,12 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+	default:
+		// Clipboard and cursor messages arrive separately from keypresses.
+		if m.state == StateAddEvent && m.focusIndex == 2 {
+			m.timeInput, cmd = updateTimeInput(m.timeInput, msg)
+			return m, cmd
+		}
 	}
 
 	return m, nil
