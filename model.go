@@ -81,6 +81,9 @@ type appModel struct {
 	width  int
 	height int
 
+	// scale controls the main screen's event panel size; zero is the original size.
+	scale int
+
 	autoSync bool
 
 	titleInput    textinput.Model
@@ -153,6 +156,7 @@ func initialModel(autoSync bool) appModel {
 		categoryInput:      ci,
 		focusIndex:         0,
 		autoSync:           autoSync,
+		scale:              loadScale(),
 	}
 }
 

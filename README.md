@@ -55,11 +55,20 @@ In order for syncing to work properly (whether automated via `-autosync` or trig
 | `Enter` | **Select Day** (opens Day View if events exist, Add Event form otherwise) |
 | `n` | Open the "Add Event" form (auto-fills current selected date) |
 | `t` | Open the **Upcoming Todo List** view |
+| `=` or `+` / `-` | Enlarge / shrink the event panel on the main screen |
 | `s` | **Sync Events** (executes git add, commit, and push on events.json) |
 | `p` | **Pull Events** (executes git pull to update events from the remote repo) |
 | `q` / `Esc` / `Ctrl+C` | Quit the application |
 
-### Day View 
+The event panel has five sizes, from compact to large, with the original size as
+the default. Only the right-hand event panel grows or shrinks; the calendar grid
+stays fixed. The preference is saved locally in `settings.json` and restored on startup.
+Only the main screen handles the sizing shortcuts; other
+screens keep their normal layout. In add/edit forms, `=`, `+`, and `-` retain their
+existing input behavior (the time field still accepts digits only).
+
+### Day View
+
 | Key | Action |
 | --- | --- |
 | `Up` / `Down` | Traverse through multiple events on the active day |
