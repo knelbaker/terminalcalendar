@@ -100,6 +100,18 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.state {
 		case StateCalendar:
 			switch msg.String() {
+			case "=", "+", "-":
+				delta := 1
+				if msg.String() == "-" {
+					delta = -1
+				}
+				scale := clampScale(m.scale + delta)
+				if scale != m.scale {
+					m.scale = scale
+					if err := saveScale(scale); err != nil {
+						m.syncStatus = "Could not save layout size: " + err.Error()
+					}
+				}
 			case "q", "esc":
 				if m.autoSync {
 					_ = syncEventsWithGit()

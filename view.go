@@ -31,13 +31,19 @@ func (m appModel) View() string {
 
 // renderCalendarView generates the string output for the calendar grid.
 func (m appModel) renderCalendarView(showDeleteModal bool) string {
+	scale := 0
+	if m.state == StateCalendar {
+		scale = clampScale(m.scale)
+	}
+	const cellWidth = 4
+	const cellHeight = 2
 	header := styleCalendarHeader.Render(m.currentDate.Format("January 2006"))
 
 	// Build days of week header
 	daysOfWeek := []string{"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"}
 	var dowStrs []string
 	for _, d := range daysOfWeek {
-		dowStrs = append(dowStrs, lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Render(d))
+		dowStrs = append(dowStrs, lipgloss.NewStyle().Width(cellWidth).Align(lipgloss.Center).Render(d))
 	}
 	dowRow := lipgloss.JoinHorizontal(lipgloss.Top, dowStrs...)
 
@@ -69,7 +75,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 			}
 		}
 
-		style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
+		style := lipgloss.NewStyle().Width(cellWidth).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
 		if hasEvent {
 			dotColor := "241"
 			if allCompleted {
@@ -79,7 +85,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		} else {
 			dateStr = dateStr + "\n "
 		}
-		currentRow = append(currentRow, style.Render(dateStr))
+		currentRow = append(currentRow, style.Height(cellHeight).Render(dateStr))
 	}
 
 	// Render days
@@ -101,15 +107,15 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 			}
 		}
 
-		style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center)
+		style := lipgloss.NewStyle().Width(cellWidth).Align(lipgloss.Center)
 
 		isToday := now.Year() == m.currentDate.Year() && now.Month() == m.currentDate.Month() && now.Day() == day
 		isSelected := m.selectedDate.Year() == m.currentDate.Year() && m.selectedDate.Month() == m.currentDate.Month() && m.selectedDate.Day() == day
 
 		if isSelected {
-			style = styleSelectedDate.Width(4).Align(lipgloss.Center)
+			style = styleSelectedDate.Width(cellWidth).Align(lipgloss.Center)
 		} else if isToday {
-			style = styleCurrentDate.Width(4).Align(lipgloss.Center)
+			style = styleCurrentDate.Width(cellWidth).Align(lipgloss.Center)
 		}
 
 		if hasEvent {
@@ -123,7 +129,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 			dateStr = dateStr + "\n "
 		}
 
-		currentRow = append(currentRow, style.Render(dateStr))
+		currentRow = append(currentRow, style.Height(cellHeight).Render(dateStr))
 
 		if len(currentRow) == 7 {
 			gridRows = append(gridRows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
@@ -149,7 +155,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 				}
 			}
 
-			style := lipgloss.NewStyle().Width(4).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
+			style := lipgloss.NewStyle().Width(cellWidth).Align(lipgloss.Center).Foreground(lipgloss.Color("241")) // dim for adjacent month
 			if hasEvent {
 				dotColor := "241"
 				if allCompleted {
@@ -159,15 +165,13 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 			} else {
 				dateStr = dateStr + "\n "
 			}
-			currentRow = append(currentRow, style.Render(dateStr))
+			currentRow = append(currentRow, style.Height(cellHeight).Render(dateStr))
 			dayNum++
 		}
 		gridRows = append(gridRows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 	}
 
 	grid := lipgloss.JoinVertical(lipgloss.Left, gridRows...)
-
-	instructions := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("\nh/j/k/l or Arrows: Move\nEnter: Select Day • n: Add Event • t: Todo List\ns: Sync • p: Pull • q/esc: Quit")
 
 	var syncText string
 	if m.syncStatus != "" {
@@ -180,7 +184,7 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		syncText = "\n\n" + style.Render(m.syncStatus)
 	}
 
-	calendarBlock := lipgloss.JoinVertical(lipgloss.Center, header, "", dowRow, grid, instructions, syncText)
+	calendarBlock := lipgloss.JoinVertical(lipgloss.Center, header, "", dowRow, grid)
 
 	// Panel Content
 	var sidePanel strings.Builder
@@ -272,11 +276,18 @@ func (m appModel) renderCalendarView(showDeleteModal bool) string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("240")).
 		Padding(1, 2).
-		Width(30).
-		Height(15).
+		Width(30 + 6*scale).
+		Height(15 + 3*scale).
 		Render(sidePanel.String())
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, calendarBlock, "    ", sidePanelBlock)
+	content := lipgloss.JoinHorizontal(lipgloss.Top, calendarBlock, "    ", sidePanelBlock)
+	if m.state == StateCalendar {
+		help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(
+			"arrows/hjkl move   enter open   n new   t todo\n" +
+				"+/- scale   s sync   p pull   q/esc quit")
+		content = lipgloss.JoinVertical(lipgloss.Left, content, "", help)
+	}
+	return content + syncText
 }
 
 // renderAddEventForm generates the string output for the event creation form.
